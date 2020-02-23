@@ -133,35 +133,27 @@ class WeiboCrawler:
         self._get_ajax_post['script_uri'] = uid
         self._ajax_url_get = self.make_url(self._ajax_url, self._get_ajax_post)
 
-    def get_ajax(self,page, pre_page, page_bar):
-
-
-        spTime = str(time.time()).split('.')
-        self._get_ajax_post['__rnd'] = ''.join((spTime[0], spTime[1][:3]))
-
+    
+    def get_ajax(self, page, pre_page, pagebar, no):
+        url = re.sub('page=.*?&', ''.join((''.join(('page=', str(page))), '&')), self._ajax_url_get)
+        url = re.sub('pre_page=.*?&', ''.join((''.join(('pre_page=', str(pre_page))), '&')), url)
+        url = re.sub('pagebar=.*?&', ''.join((''.join(('pagebar=', str(pagebar))), '&')), url)
+     
         header = urllib.request.Request(url = url, headers = self._headers_ajax)
         response = urllib.request.urlopen(header, timeout = 4)
-        
-        with open('ajax_test1.html', 'w') as file1:
+        with open(''.join(('ajax_test', str(no))) + '.html', 'w') as file1:
             file1.write(json.loads(self.gzip2str(response.read()))['data'])
 
+    def get_content(self, uid):
+        self.get_init(uid)
+
+        self.get_ajax(9, 8, 0, 0)
         time.sleep(3)
-        
-        self._get_ajax_post['pagebar'] = '1'     #important
-        spTime = str(time.time()).split('.')
-        self._get_ajax_post['__rnd'] = ''.join((spTime[0], spTime[1][:3]))
+        self.get_ajax(9, 9, 0, 1)
+        time.sleep(3)
+        self.get_ajax(9, 9, 1, 2)
 
-        url = self.make_url(self._ajax_url, self._get_ajax_post)
-        header = urllib.request.Request(url = url, headers = self._headers_ajax)
-        response = urllib.request.urlopen(header, timeout = 4)
         
-        with open('ajax_test2.html', 'w') as file1:
-            file1.write(json.loads(self.gzip2str(response.read()))['data'])
-
-    def output(self):
-        print(self._cookies)
-        print(self._cookie)
-        return
 
     _main_url = 'https://www.weibo.com/'
     _login_url = 'https://www.weibo.com/login.php'
@@ -195,7 +187,7 @@ class WeiboCrawler:
             'page':'9',
             'pre_page':'9',
             'domain_op':'100505',
-            '__rnd':''
+            #'__rnd':''
             }
 
     _cookies = {}
