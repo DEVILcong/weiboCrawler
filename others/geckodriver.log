@@ -1,0 +1,23 @@
+1581569986511	addons.webextension.doh-rollout@mozilla.org	WARN	Loading extension 'doh-rollout@mozilla.org': Reading manifest: Invalid extension permission: networkStatus
+1581569986704	addons.webextension.screenshots@mozilla.org	WARN	Loading extension 'screenshots@mozilla.org': Reading manifest: Invalid extension permission: mozillaAddons
+1581569986705	addons.webextension.screenshots@mozilla.org	WARN	Loading extension 'screenshots@mozilla.org': Reading manifest: Invalid extension permission: telemetry
+1581569986705	addons.webextension.screenshots@mozilla.org	WARN	Loading extension 'screenshots@mozilla.org': Reading manifest: Invalid extension permission: resource://pdf.js/
+1581569986705	addons.webextension.screenshots@mozilla.org	WARN	Loading extension 'screenshots@mozilla.org': Reading manifest: Invalid extension permission: about:reader*
+1581569988891	Marionette	INFO	Listening on port 35499
+1581569988977	Marionette	WARN	TLS certificate errors will be ignored for this session
+1581569997131	Marionette	INFO	Stopped listening on port 35499
+1581570016644	addons.webextension.doh-rollout@mozilla.org	WARN	Loading extension 'doh-rollout@mozilla.org': Reading manifest: Invalid extension permission: networkStatus
+1581570016784	addons.webextension.screenshots@mozilla.org	WARN	Loading extension 'screenshots@mozilla.org': Reading manifest: Invalid extension permission: mozillaAddons
+1581570016784	addons.webextension.screenshots@mozilla.org	WARN	Loading extension 'screenshots@mozilla.org': Reading manifest: Invalid extension permission: telemetry
+1581570016784	addons.webextension.screenshots@mozilla.org	WARN	Loading extension 'screenshots@mozilla.org': Reading manifest: Invalid extension permission: resource://pdf.js/
+1581570016784	addons.webextension.screenshots@mozilla.org	WARN	Loading extension 'screenshots@mozilla.org': Reading manifest: Invalid extension permission: about:reader*
+1581570018525	Marionette	INFO	Listening on port 45105
+1581570018552	Marionette	WARN	TLS certificate errors will be ignored for this session
+WebGL(0x7f2bc0fa4000)::ForceLoseContext
+WebGL(0x7f2bc026b000)::ForceLoseContext
+WebGL(0x7f2bc1169000)::ForceLoseContext
+JavaScript error: resource://devtools/server/actors/network-monitor/network-response-listener.js, line 84: NS_ERROR_FAILURE: Component returned failure code: 0x80004005 (NS_ERROR_FAILURE) [nsIInterfaceRequestor.getInterface]
+WebGL(0x7f2bb8f3a800)::ForceLoseContext
+WebGL(0x7f2bb8d79000)::ForceLoseContext
+WebGL(0x7f2bb8d78800)::ForceLoseContext
+1581570304000	Marionette	INFO	Stopped listening on port 45105

@@ -1,0 +1,41 @@
+V: 2.2.4.20141125
+CI: sz:1366x768|dp:24|ac:Mozilla|an:Netscape|cpu:undefined|pf:Linux x86_64|jv:1.3|ct:unkown|lg:en-US|tz:-8|fv:undefined|ja:0
+-----------------------------------------
+#function Y
+PI: pid:0-9999-0-0-1|st:0|et:2|ref:|hp:unkown|PGLS:|ZT:|MT:|keys:|dom:1082|ifr:1|nld:2384|drd:252|bp:0|url:
+
+pid = 0-9999-0-0-1  h('published')[0]-9999-0-h('published')[1]-[2]  sp by ','(i and p not null )
+st = s('_s_upa')
+et = aw
+dom = A('*').length
+ifr = A('iframe').length
+nld = __GLOBAL_STARTS_PAGEONLOAD_TIME - ..._PAGESTART_TIME
+drd = _DOMREADY_TIME - _PAGESTART_TIME
+bp = if($CONFIG.bigpipe == 'true') = 1 
+
+-----------------------------------------
+#function am
+UI: vid:6392984466.978558.1581430923640|sid:9134551868380.193.1581484543696|lv:1581478705638:3:3:3|un:|uo:|ae:|su:
+
+U = "SINAGLOBAL"
+C = "Apache"
+
+s(e) = "" or P(A.cookie, e, ";", "")  get 
+
+vid 
+    e = s(U)
+    if(" " == e):
+        e = s(C)
+        al(U, e, 3650)
+    return e
+
+sid
+    e = s(C)
+    if("" == e):
+        e = random*10e13+'.'+time
+        al(C, e)
+    return e
+----------------------------------------
+EX: ex1:WEIBO-V6|ex2:
+gUid_1581484543729:
+time
