@@ -145,8 +145,8 @@ class WeiboCrawler:
         self._get_ajax_post['id'] = ''.join((self._get_ajax_post['domain'], uid))
         self._get_ajax_post['script_uri'] = uid
 
-        spTime = str(time.time()).split('.')
-        self._get_ajax_post['__rnd'] = ''.join((spTime[0], spTime[1][:3]))
+        #spTime = str(time.time()).split('.')
+        #self._get_ajax_post['__rnd'] = ''.join((spTime[0], spTime[1][:3]))
 
         url = self.make_url(self._ajax_url, self._get_ajax_post)
         header = urllib.request.Request(url = url, headers = self._headers_ajax)
@@ -156,14 +156,14 @@ class WeiboCrawler:
             file1.write(json.loads(self.gzip2str(response.read()))['data'])
 
         time.sleep(3)
-        set_cookie = response.getheader('Set-Cookie')
-        set_cookie = set_cookie[:-7]
-        self._cookies[set_cookie.split('=')[0]] = set_cookie.split('=')[1]
-        self.update_cookies()
+        #set_cookie = response.getheader('Set-Cookie')
+        #set_cookie = set_cookie[:-7]
+        #self._cookies[set_cookie.split('=')[0]] = set_cookie.split('=')[1]
+        #self.update_cookies()
         
         self._get_ajax_post['pagebar'] = '1'
-        spTime = str(time.time()).split('.')
-        self._get_ajax_post['__rnd'] = ''.join((spTime[0], spTime[1][:3]))
+        #spTime = str(time.time()).split('.')
+        #self._get_ajax_post['__rnd'] = ''.join((spTime[0], spTime[1][:3]))
 
         url = self.make_url(self._ajax_url, self._get_ajax_post)
         header = urllib.request.Request(url = url, headers = self._headers_ajax)
@@ -208,7 +208,7 @@ class WeiboCrawler:
             'page':'9',
             'pre_page':'9',
             'domain_op':'100505',
-            '__rnd':''
+            #'__rnd':''
             }
 
     _cookies = {}
@@ -229,7 +229,7 @@ class WeiboCrawler:
             'Accept-Language':r'en-US,en;q=0.9,zh-CN;q=0.8,zh;q=0.7,pt;q=0.6,ca;q=0.5',
             'Connection':'keep-alive',
             'Content-Type':r'application/x-www-form-urlencoded',
-            'Referer':'https://weibo.com/mikuya1031?profile_ftype=1&is_all=1&page=9',
+            #'Referer':'https://weibo.com/mikuya1031?profile_ftype=1&is_all=1&page=9',
             'Cookie':'',
             'Host':'weibo.com',
             'Sec-Fetch-Dest':'empty',
