@@ -128,27 +128,17 @@ class WeiboCrawler:
 
         return
 
-    def get_content(self, uid):
-        '''
-        获取某个用户所有的微博信息
-        '''
-        url = self._main_url + uid
-        url = self.make_url(url, self._get_content_post)
-        header = urllib.request.Request(url = url, headers = self._headers)
-
-        response = urllib.request.urlopen(header,timeout = 4)
-        with open('ajax_test.html', 'w') as file1:
-            file1.write(self.gzip2str(response.read()))
-
-        #-------get ajax--------
-        self._get_ajax_post['pagebar'] = '0'
+    def get_init(self, uid):
         self._get_ajax_post['id'] = ''.join((self._get_ajax_post['domain'], uid))
         self._get_ajax_post['script_uri'] = uid
+        self._ajax_url_get = self.make_url(self._ajax_url, self._get_ajax_post)
+
+    def get_ajax(self,page, pre_page, page_bar):
+
 
         spTime = str(time.time()).split('.')
         self._get_ajax_post['__rnd'] = ''.join((spTime[0], spTime[1][:3]))
 
-        url = self.make_url(self._ajax_url, self._get_ajax_post)
         header = urllib.request.Request(url = url, headers = self._headers_ajax)
         response = urllib.request.urlopen(header, timeout = 4)
         
@@ -156,12 +146,8 @@ class WeiboCrawler:
             file1.write(json.loads(self.gzip2str(response.read()))['data'])
 
         time.sleep(3)
-        set_cookie = response.getheader('Set-Cookie')
-        set_cookie = set_cookie[:-7]
-        self._cookies[set_cookie.split('=')[0]] = set_cookie.split('=')[1]
-        self.update_cookies()
         
-        self._get_ajax_post['pagebar'] = '1'
+        self._get_ajax_post['pagebar'] = '1'     #important
         spTime = str(time.time()).split('.')
         self._get_ajax_post['__rnd'] = ''.join((spTime[0], spTime[1][:3]))
 
@@ -182,6 +168,7 @@ class WeiboCrawler:
     _login_success_url = 'https://www.weibo.com/u'
     _search_user_url = 'https://s.weibo.com/user'
     _ajax_url = 'https://www.weibo.com/p/aj/v6/mblog/mbloglist'
+    _ajax_url_get = ''
     _cookie = '' 
 
     _search_data = {
@@ -229,7 +216,6 @@ class WeiboCrawler:
             'Accept-Language':r'en-US,en;q=0.9,zh-CN;q=0.8,zh;q=0.7,pt;q=0.6,ca;q=0.5',
             'Connection':'keep-alive',
             'Content-Type':r'application/x-www-form-urlencoded',
-            'Referer':'https://weibo.com/mikuya1031?profile_ftype=1&is_all=1&page=9',
             'Cookie':'',
             'Host':'weibo.com',
             'Sec-Fetch-Dest':'empty',
