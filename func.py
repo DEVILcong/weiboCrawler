@@ -10,6 +10,7 @@ import re
 import time
 import sys
 import json
+import os
 
 class WeiboCrawler:
     def __init__(self):
@@ -46,9 +47,7 @@ class WeiboCrawler:
         self._cookies['_s_tentry'] = 'login.sina.com.cn'
 
         
-        self._cookie = self.combine_cookies(self._cookies)
-        self._headers['Cookie'] = self._cookie 
-        self._headers_ajax['Cookie'] = self._headers['Cookie']
+        self.update_cookies()
 
         cookie_json = json.dumps(self._cookies)
         with open('cookie', 'w') as file1:
@@ -133,25 +132,75 @@ class WeiboCrawler:
         self._get_ajax_post['script_uri'] = uid
         self._ajax_url_get = self.make_url(self._ajax_url, self._get_ajax_post)
 
-    
+    def get_page_count(self):
+        if not os.path.exists(self.get_file_path(1, 3, 1)):
+            print('failed to get page count, quit...')
+            sys.exit()
+
+        with open(file_loc) as file1:
+            content = file1.read()
+
+        pat = '第&nbsp;(.*?)&nbsp;页'
+        return re.search(pat, content).group(1)
+
+    def get_file_path(self, page, part, tag):
+        str_tmp = ''
+        str_tmp = ''.join((str_tmp, self._main_folder_name))
+        str_tmp = ''.join((str_tmp, self._sub_folder_prefix))
+        str_tmp = ''.join((str_tmp, str(page)))
+        
+        if tag == 0:
+            return str_tmp
+
+        str_tmp = ''.join((str_tmp, '/'))
+        str_tmp = ''.join((str_tmp, self._file_prefix))
+        str_tmp = ''.join((str_tmp, str(part)))
+        str_tmp = ''.join((str_tmp, self._file_suffix))
+
+        return str_tmp
+
+
     def get_ajax(self, page, pre_page, pagebar, no):
         url = re.sub('page=.*?&', ''.join((''.join(('page=', str(page))), '&')), self._ajax_url_get)
         url = re.sub('pre_page=.*?&', ''.join((''.join(('pre_page=', str(pre_page))), '&')), url)
         url = re.sub('pagebar=.*?&', ''.join((''.join(('pagebar=', str(pagebar))), '&')), url)
      
         header = urllib.request.Request(url = url, headers = self._headers_ajax)
-        response = urllib.request.urlopen(header, timeout = 4)
-        with open(''.join(('ajax_test', str(no))) + '.html', 'w') as file1:
-            file1.write(json.loads(self.gzip2str(response.read()))['data'])
+
+        try:
+            response = urllib.request.urlopen(header, timeout = 4) 
+        except urllib.error.HTTPError as error:
+            return error.getcode()
+        except urllib.error.URLError:
+            return -1
+        else:
+            with open(self.get_file_path(page, no, 1), 'w') as file1:
+                file1.write(json.loads(self.gzip2str(response.read()))['data'])
+        return 1
 
     def get_content(self, uid):
         self.get_init(uid)
+        
+        if not os.path.exists(self._main_folder_name):
+            os.mkdir(self._main_folder_name[:-1])
+        if not os.path.exists(self.get_file_path(1, 0, 0)):
+            os.mkdir(self.get_file_path(1, 0, 0))
 
-        self.get_ajax(9, 8, 0, 0)
-        time.sleep(3)
-        self.get_ajax(9, 9, 0, 1)
-        time.sleep(3)
-        self.get_ajax(9, 9, 1, 2)
+        self.get_ajax(1, 2, 0, 0)
+        time.sleep(2)
+        self.get_ajax(1, 1, 0, 1)
+        time.sleep(2)
+        self.get_ajax(1, 1, 1, 2)
+
+        page_count = self.get_page_count()
+
+        i = 2
+        success = 0
+        failed = 0
+        while i <= page_count:
+            if not os.path.exists(self.get_file_path(i, 0, 0)):
+                os.mkdir(self.get_file_path(i, 0, 0))
+
 
         
 
@@ -161,6 +210,12 @@ class WeiboCrawler:
     _search_user_url = 'https://s.weibo.com/user'
     _ajax_url = 'https://www.weibo.com/p/aj/v6/mblog/mbloglist'
     _ajax_url_get = ''
+
+    _main_folder_name = 'result/'
+    _sub_folder_prefix = 'page'
+    _file_prefix = 'part'
+    _file_suffix = '.html'
+
     _cookie = '' 
 
     _search_data = {
@@ -207,12 +262,11 @@ class WeiboCrawler:
             'Accept-Encoding':'gzip, deflate, br',
             'Accept-Language':r'en-US,en;q=0.9,zh-CN;q=0.8,zh;q=0.7,pt;q=0.6,ca;q=0.5',
             'Connection':'keep-alive',
-            'Content-Type':r'application/x-www-form-urlencoded',
             'Cookie':'',
             'Host':'weibo.com',
-            'Sec-Fetch-Dest':'empty',
-            'Sec-Fetch-Mode':'cors',
-            'Sec-Fetch-Site':'same-origin',
+            'Sec-Fetch-Dest':'document',
+            'Sec-Fetch-Mode':'navigate',
+            'Sec-Fetch-Site':'none',
+            'Sec-Fetch-User':'?1',
             'User-Agent':r'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.116 Safari/537.36',
-            'X-Requested-With':'XMLHttpRequest'
             }
