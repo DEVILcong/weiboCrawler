@@ -11,6 +11,7 @@ import time
 import sys
 import json
 import os
+import socket
 
 class WeiboCrawler:
     def __init__(self):
@@ -133,7 +134,8 @@ class WeiboCrawler:
         self._ajax_url_get = self.make_url(self._ajax_url, self._get_ajax_post)
 
     def get_page_count(self):
-        if not os.path.exists(self.get_file_path(1, 3, 1)):
+        file_loc = self.get_file_path(1, 2, 1)
+        if not os.path.exists(file_loc):
             print('failed to get page count, quit...')
             sys.exit()
 
@@ -160,49 +162,103 @@ class WeiboCrawler:
         return str_tmp
 
 
-    def get_ajax(self, page, pre_page, pagebar, no):
-        url = re.sub('page=.*?&', ''.join((''.join(('page=', str(page))), '&')), self._ajax_url_get)
-        url = re.sub('pre_page=.*?&', ''.join((''.join(('pre_page=', str(pre_page))), '&')), url)
-        url = re.sub('pagebar=.*?&', ''.join((''.join(('pagebar=', str(pagebar))), '&')), url)
-     
-        header = urllib.request.Request(url = url, headers = self._headers_ajax)
+    def get_ajax(self, page):
+        if not os.path.exists(self.get_file_path(page, 0, 0)):
+            os.mkdir(self.get_file_path(page, 0, 0))
 
-        try:
-            response = urllib.request.urlopen(header, timeout = 4) 
-        except urllib.error.HTTPError as error:
-            return error.getcode()
-        except urllib.error.URLError:
-            return -1
+        if page == 1:
+            pre_page = page + 1
         else:
-            with open(self.get_file_path(page, no, 1), 'w') as file1:
-                file1.write(json.loads(self.gzip2str(response.read()))['data'])
-        return 1
+            pre_page = page - 1
+
+        url1 = re.sub('page=.*?&', ''.join((''.join(('page=', str(page))), '&')), self._ajax_url_get)
+        url1 = re.sub('pre_page=.*?&', ''.join((''.join(('pre_page=', str(pre_page))), '&')), url1)
+        url1 = re.sub('pagebar=.*?&', ''.join((''.join(('pagebar=', '0')), '&')), url1)
+     
+        url2 = re.sub('pre_page=.*?&', ''.join((''.join(('pre_page=', str(page))), '&')), url1)
+        url3 = re.sub('pagebar=.*?&', ''.join((''.join(('pagebar=', '1')), '&')), url2)
+        urls = [url1, url2, url3]
+        
+        header1 = urllib.request.Request(url = url1, headers = self._headers_ajax)
+        header2 = urllib.request.Request(url = url2, headers = self._headers_ajax)
+        header3 = urllib.request.Request(url = url3, headers = self._headers_ajax)
+        headers = [header1, header2, header3]
+
+        fail_count = 0
+        fails = []
+        fail_reason = []
+
+        for i in range(len(headers)):
+            #print(urls[i])
+            try:
+                response = urllib.request.urlopen(headers[i], timeout = 4) 
+            except urllib.error.HTTPError as error:
+                fail_count += 1
+                fails.append(urls[i])
+                fail_reason.append(str(error.getcode()))
+                time.sleep(2)
+            except urllib.error.URLError:
+                fail_count += 1
+                fails.append(urls[i])
+                fail_reason.append('URLError')
+                time.sleep(2)
+            except socket.timeout:
+                fail_count += 1
+                fails.append(urls[i])
+                fail_reason.append('Timeout')
+                time.sleep(2)
+            else:
+                with open(self.get_file_path(page, i, 1), 'w') as file1:
+                    file1.write(json.loads(self.gzip2str(response.read()))['data'])
+                time.sleep(2)
+        return (fail_count, fails, fail_reason)
 
     def get_content(self, uid):
         self.get_init(uid)
         
+        fail_count = 0
+        success_count = 0
+
         if not os.path.exists(self._main_folder_name):
             os.mkdir(self._main_folder_name[:-1])
-        if not os.path.exists(self.get_file_path(1, 0, 0)):
-            os.mkdir(self.get_file_path(1, 0, 0))
-
-        self.get_ajax(1, 2, 0, 0)
-        time.sleep(2)
-        self.get_ajax(1, 1, 0, 1)
-        time.sleep(2)
-        self.get_ajax(1, 1, 1, 2)
+        result = self.get_ajax(1)
+        if result[0] != 0:
+            for i in range(len(result[2])):
+                print(''.join(('ErrorUrl:', result[1][i], '; ErrorReason:', result[2][i])))
+            fail_count += result[0]
+            success_count += 3 - result[0]
+        elif result[0] == 3:
+            print(result)
+            return
+        else:
+            success_count += 3
+            print('successfully get page 1')
 
         page_count = self.get_page_count()
+        print('page count:' + page_count)
+        self._max_fail_count = float(page_count) / 3
 
         i = 2
-        success = 0
-        failed = 0
-        while i <= page_count:
-            if not os.path.exists(self.get_file_path(i, 0, 0)):
-                os.mkdir(self.get_file_path(i, 0, 0))
+        while i <= int(page_count):
+            result = self.get_ajax(i)
+            if result[0] != 0:
+                for i in range(len(result[2])):
+                    print(''.join(('ErrorUrl:', result[1][i], '; ErrorReason:', result[2][i])))
+                fail_count += result[0]
+                success_count += 3 - result[0]
+            else:
+                success_count += 3
+                print(''.join(('successfully get page ', str(i))))
 
-
+            if fail_count >= self._max_fail_count:
+                print('too many fails, exiting')
+                break
+            i += 1
         
+        print(''.join(('fails:', str(fail_count), '; successes:', str(success_count))))
+        print(''.join(('Your file is saved in ', self._main_folder_name)))
+        print('Have a good day')
+
 
     _main_url = 'https://www.weibo.com/'
     _login_url = 'https://www.weibo.com/login.php'
@@ -215,6 +271,8 @@ class WeiboCrawler:
     _sub_folder_prefix = 'page'
     _file_prefix = 'part'
     _file_suffix = '.html'
+    
+    _max_fail_count = 0
 
     _cookie = '' 
 
