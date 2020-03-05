@@ -58,6 +58,7 @@ class WeiboCrawler:
             file1.write(cookie_json)
 
         print('login success')
+        print('Your cookie is saved in file \'cookie\'')
 
         return
     
