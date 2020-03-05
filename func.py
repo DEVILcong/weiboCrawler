@@ -462,9 +462,13 @@ class WeiboCrawler:
                                         continue
 
                         feed = item.xpath('.//div[@class="WB_feed_handle"]')[0]
-                        forward = feed.xpath('.//span[@node-type="forward_btn_text"]')[0]
-                        em = forward.xpath('.//em')[1]
-                        part_content[7] = self.str_clean(em.xpath('./text()')[0])
+                        forward = feed.xpath('.//span[@node-type="forward_btn_text"]')
+                        if len(forward) != 0:
+                            forward = forward[0]
+                            em = forward.xpath('.//em')[1]
+                            part_content[7] = self.str_clean(em.xpath('./text()')[0])
+                        else:
+                            part_content[7] = '仅粉丝可见，没有'
 
                         forward = feed.xpath('.//span[@node-type="comment_btn_text"]')[0]
                         em = forward.xpath('.//em')[1]
