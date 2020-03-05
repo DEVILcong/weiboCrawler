@@ -2,7 +2,6 @@
 
 from selenium import webdriver
 from multiprocessing import Pool, Manager
-from queue import Queue
 from prettytable import PrettyTable
 from io import BytesIO
 from lxml import etree as et
@@ -147,7 +146,14 @@ class WeiboCrawler:
             content = file1.read()
 
         pat = '第&nbsp;(.*?)&nbsp;页'
-        return re.search(pat, content).group(1)
+        try:
+            page = re.search(pat, content).group(1)
+        except Exception:
+            print('未成功获取微博页数，可能的原因：')
+            print('\t1.cookie已失效，请尝试重新获取cookie')
+            print('\t2.你网络不行')
+        else:
+            return page
 
     def get_file_path(self, page, part, tag):
         str_tmp = ''
@@ -178,12 +184,12 @@ class WeiboCrawler:
         while True:  #attention !!!!!!!!
             lockP.acquire()
             page = vPage.value
-            vPage.value += 1
-            lockP.release()
-
             if page > pageCount:
+                lockP.release()
                 break
-            
+            else:
+                vPage.value += 1
+                lockP.release()     
 
             if not os.path.exists(self.get_file_path(page, 0, 0)):
                 os.mkdir(self.get_file_path(page, 0, 0))
@@ -252,7 +258,78 @@ class WeiboCrawler:
             lockFP.release()
             lockPrint.release()
             
-        return 
+        return
+    
+    def get_pics(self, dPics): 
+        
+        qPics = Manager().Queue()
+        qFailPics = Manager().Queue()
+        vSuccPicCount = Manager().Value('i', 0)
+        
+        lockP = Manager().Lock()
+        lockFP = Manager().Lock()
+        lockSPC = Manager().Lock()
+        lockPrint = Manager().Lock()
+
+        for item in dPics.items():
+            qPics.put(item)
+
+        pool = Pool(self._process_count)
+        data = ((qPics, qFailPics, vSuccPicCount, lockP, lockFP, lockSPC, lockPrint) for i in range(self._process_count))
+        pool.starmap(self.get_pics_process, data)
+
+        pool.close()
+        pool.join()
+
+        print('--------get failed pics---------')
+        time.sleep(2)
+        if qFailPics.qsize() != 0:
+            while not qFailPics.empty():
+                qPics.put(qFailPics.get())
+
+            self.get_pics_process(qPics, qFailPics, vSuccPicCount, lockP, lockFP, lockSPC, lockPrint)
+
+        print('----------get pictures done------------')
+        print('----------pictures:', vSuccPicCount.value, '-----------')
+
+
+    def get_pics_process(self, qPics, qFailPics, vSuccPicCount, lockP, lockFP, lockSPC, lockPrint):
+        
+        while True:      #ATTENTION !!!!!!!!!
+            
+            lockP.acquire()
+            if qPics.empty():
+                lockP.release()
+                break
+            else:
+                img = qPics.get()
+                lockP.release()
+        
+            if not os.path.exists(self._pics_folder):
+                os.mkdir(self._pics_folder)
+
+            url = ''.join(('https://', img[1]))
+            url = re.sub(self._small_pic, self._big_pic, url)
+            try:
+                urllib.request.urlretrieve(url, os.path.join(self._pics_folder,''.join((img[0], img[1][-4:]))))
+            except Exception as e:
+                lockPrint.acquire()
+                lockFP.acquire()
+                print('failed to get ', img[0], ', try agine later')
+                print(e)
+                qFailPics.put(img)
+                lockPrint.release()
+                lockFP.release()
+            else:
+                lockPrint.acquire()
+                lockSPC.acquire()
+                print('successfully get ', img[0])
+                vSuccPicCount.value += 1
+                lockPrint.release()
+                lockSPC.release()
+            time.sleep(1)
+
+        return
 
     def get_content(self, uid):
         self.get_init(uid)
@@ -282,7 +359,14 @@ class WeiboCrawler:
 
         pool.close()
         pool.join()
+
+        print('----------try to get failed pages----------')
+        for i in range(vFailCount.value):
+            page = qFailPage.get()
+            vPage.set(page)
+            self.get_ajax(vPage, vFailCount, qFailPage, page, lockP, lockFC, lockFP, lockPrint)
         
+        print('-------------------------------------------')
         print(''.join(('Your file is saved in ', self._main_folder_name)))
         print('Have a good day')
 
@@ -386,9 +470,16 @@ class WeiboCrawler:
                         part_content[8] = self.str_clean(em.xpath('./text()')[0])
 
                         forward = feed.xpath('.//span[@node-type="like_status"]')[0]
-                        em = forward.xpath('.//em')[1]
-                        part_content[9] = self.str_clean(em.xpath('./text()')[0])
-
+                        em = forward.xpath('.//em')
+                        if len(em) == 1:
+                            em = em[0]
+                            part_content[9] = self.str_clean(em.xpath('./text()')[0])
+                        elif len(em) == 2:
+                            em = em[1]
+                            part_content[9] = self.str_clean(em.xpath('./text()')[0])
+                        else:
+                            part_content[9] = '-1'
+                       
                         contents.append(part_content)
                     print('successfully get page:', str(page_count), ',part:', str(part_count))
         
@@ -408,50 +499,10 @@ class WeiboCrawler:
                 csv_w.writerow(item)
         
         print('write file done, start get pics')
-        #get pics according to img_locs
-        if not os.path.exists(self._pics_folder):
-            os.mkdir(self._pics_folder)
+        self.get_pics(img_locs)
 
-        fail_pics = {}
-        fail_count = 0
-        success_count = 0
-        for img in img_locs.items():
-            url = ''.join(('https://', img[1]))
-            url = re.sub(self._small_pic, self._big_pic, url)
-            try:
-                urllib.request.urlretrieve(url, os.path.join(self._pics_folder,''.join((img[0], img[1][-4:]))))
-            except Exception as e:
-                print('failed to get ', img[0], ', try agine later')
-                print(e)
-                fail_pics[img[0]] = img[1]
-                fail_count += 1
-            else:
-                print('successfully get ', img[0])
-                success_count += 1
-            time.sleep(1)
-
-        if fail_count > 0:
-            print('try to get failed pics')
-            keys = list(fail_pics.keys())
-            for key in keys:
-                url = ''.join(('https://', fail_pics[key]))
-                url = re.sub(self._small_pic, self._big_pic, url)
-                try:
-                    urllib.request.urlretrieve(url, os.path.join(self._pics_folder,''.join((key, img_locs[key][-4:]))))
-                except Exception:
-                    print('get ', key, ' error')
-                else:
-                    print('successfully get ', key)
-                    fail_count -= 1
-                    success_count += 1
-                time.sleep(1)
-
-        print('success:', success_count)
-        print('fail:', fail_count)
-        print('pics are saved in ', self._pics_folder)
-
-
-        return (contents, img_locs)
+        print('-----resolve done, have a good day--------')
+        return
 
 
 
