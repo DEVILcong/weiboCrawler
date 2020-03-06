@@ -1,5 +1,8 @@
 # 新浪微博爬虫
 
+## 0.注意
+建议用Typora查看本文件，github不能正常显示流程图
+
 ## 1.使用到的一些东西
 
 selenium、re、lxml&xpath、urllib、multiprocessing、json、csv
