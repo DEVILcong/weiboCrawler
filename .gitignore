@@ -1,0 +1,10 @@
+# ignore wegpages and pics
+
+result/
+pictures/
+results/
+result.csv
+pics.csv
+cookie
+
+
