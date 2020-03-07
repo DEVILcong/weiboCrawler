@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # ignore wegpages and pics
 
 result/
@@ -8,3 +9,12 @@ pics.csv
 cookie
 
 
+=======
+result/
+results/
+pictures/
+__pycache__/
+cookie
+pics.csv
+result.csv
+>>>>>>> fix
