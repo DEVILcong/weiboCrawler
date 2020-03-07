@@ -311,6 +311,7 @@ class WeiboCrawler:
 
             url = ''.join(('https://', img[1]))
             url = re.sub(self._small_pic, self._big_pic, url)
+            url = re.sub(self._small_pic_1, self._big_pic, url)
             try:
                 urllib.request.urlretrieve(url, os.path.join(self._pics_folder,''.join((img[0], img[1][-4:]))))
             except Exception as e:
@@ -455,9 +456,9 @@ class WeiboCrawler:
                             if len(srcs) != 0:
                                 for src_c in range(len(srcs)):
                                     if srcs[src_c][0] == '/':
-                                        img_locs['_'.join((part_content[0], str(src_c+1)))] = srcs[src_c][2:]
+                                        img_locs['_'.join((part_content[0], str(part_content[1]), str(src_c+1)))] = srcs[src_c][2:]
                                     elif srcs[src_c][0] == 'h':
-                                        img_locs['_'.join((part_content[0], str(src_c+1)))] = srcs[src_c][8:]
+                                        img_locs['_'.join((part_content[0], str(part_content[1]), str(src_c+1)))] = srcs[src_c][8:]
                                     else:
                                         continue
 
@@ -525,6 +526,7 @@ class WeiboCrawler:
 
     _pics_folder = 'pictures'
     _small_pic = 'orj360'
+    _small_pic_1 = 'thumb150'
     _big_pic = 'mw690'
     
     _max_fail = 1
