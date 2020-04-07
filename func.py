@@ -150,9 +150,10 @@ class WeiboCrawler:
         try:
             page = re.search(pat, content).group(1)
         except Exception:
-            print('未成功获取微博页数，可能的原因：')
-            print('\t1.cookie已失效，请尝试重新获取cookie')
-            print('\t2.你网络不行')
+            #print('未成功获取微博页数，可能的原因：')
+            #print('\t1.cookie已失效，请尝试重新获取cookie')
+            #print('\t2.你网络不行')
+            return '1'
         else:
             return page
 
@@ -402,6 +403,8 @@ class WeiboCrawler:
                 with open(os.path.join(loc, page, part)) as file1:
                     content = file1.read()
                     items = et.HTML(content, parser = parser)
+                    if items is None:
+                        break
                     items = items.xpath('//div[@action-type="feed_list_item"]')
                     if len(items) == 0:
                         continue
