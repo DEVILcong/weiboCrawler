@@ -8,6 +8,7 @@ from lxml import etree as et
 import gzip
 import urllib.request
 import urllib.parse
+import urllib.error
 import re
 import time
 import sys
@@ -15,6 +16,7 @@ import json
 import os
 import socket
 import csv
+import random
 
 class WeiboCrawler:
     def __init__(self):
@@ -61,8 +63,76 @@ class WeiboCrawler:
         print('Your cookie is saved in file \'cookie\'')
 
         return
+
+    def guest_login(self):
+        '''
+        访客登录
+        获取cookie，并更新及保存
+        '''
+        try:
+            response = urllib.request.urlopen(self._get_tid_url, timeout = self._timeout)
+        except urllib.error.URLError:
+            print('url error')
+            return
+        except urllib.error.HTTPError as e:
+            print('HTTP error')
+            print('code is', e.getcode())
+            return
+        except socket.timeout:
+            print('timeout')
+            return
+
+        content = response.read().decode()
+        tid = re.findall(self._search_data['pat_tid'], content)[0]
+        print('get tid success ', tid)
+
+        data = {'t':tid, 'w':'2', 'c':'095', 'gc':'', 'cb':'cross_domain', 'from':'weibo', '_rand':random.random()}
+        data_encode = urllib.parse.urlencode(data)
+        url = '&'.join((self._get_sub_url, data_encode))
+        #print(url)
+        try:
+            response = urllib.request.urlopen(url, timeout = self._timeout)
+        except urllib.error.URLError:
+            print('url error')
+            return
+        except urllib.error.HTTPError as e:
+            print('HTTP error')
+            print('code is', e.getcode())
+            return
+        except socket.timeout:
+            print('timeout')
+            return
+
+        cookie = response.getheader('Set-Cookie')
+        #print(cookie)
+
+        try:
+            pat = 'SUB=(.*?);'
+            sub = re.findall(pat, cookie)[0]
+            pat = 'SUBP=(.*?);'
+            subp = re.findall(pat, cookie)[0]
+        except Exception:
+            print('get cookie error')
+            return
+
+        self._cookies['SUB'] = sub
+        self._cookies['SUBP'] = subp
+
+        self.update_cookies()
+
+        cookies = json.dumps(self._cookies)
+        with open('cookie', 'w') as file1:
+            file1.write(cookies)
+
+        print('successfully get cookie')
+        print(sub)
+        print(subp)
+
     
     def update_cookies(self):
+        '''
+        依据_cookies字典里面各个cookie的值更新cookie串_cookie，并将cookie串更新到两个头文件中
+        '''
         cookie_tmp = ''
         for item in self._cookies.items():
             short = '='.join(item)
@@ -520,6 +590,8 @@ class WeiboCrawler:
     _login_success_url = 'https://www.weibo.com/u'
     _search_user_url = 'https://s.weibo.com/user'
     _ajax_url = 'https://www.weibo.com/p/aj/v6/mblog/mbloglist'
+    _get_tid_url = 'https://passport.weibo.com/visitor/genvisitor?cb=gen_callback&fp=%7B%22os%22%3A%223%22%2C%22browser%22%3A%22Gecko75%2C0%2C0%2C0%22%2C%22fonts%22%3A%22undefined%22%2C%22screenInfo%22%3A%221366*768*24%22%2C%22plugins%22%3A%22%22%7D'
+    _get_sub_url = 'https://passport.weibo.com/visitor/visitor?a=incarnate'
     _ajax_url_get = ''
 
     _main_folder_name = 'result'
@@ -542,7 +614,8 @@ class WeiboCrawler:
             'pat_user_name' : 'user_name\">(.*?)</a>',
             'pat_uid' : 'uid=(.*?) action',
             'useless_sen1' :'<em class=\"s-color-red\">',
-            'useless_sen2' : '</em>'
+            'useless_sen2' : '</em>',
+            'pat_tid' : 'tid\":\"(.*?)\"'
             }
     _get_content_post = {
             'page':9,
